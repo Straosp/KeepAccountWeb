@@ -67,8 +67,7 @@ class HttpRequest {
 
   void getWorkRecordsRangeYear(Map<String,dynamic> params,{required RequestResult requestResult}) async {
     try {
-      Result result = await _dioUtil?.post(
-          AppUrl.getWorkRecordsRangeYear, params: params);
+      Result result = await _dioUtil?.post(AppUrl.getWorkRecordsRangeYear, params: params);
       requestResult.launch(result);
     } catch (_) {
       requestResult.launchError();
@@ -95,6 +94,14 @@ class HttpRequest {
   void deleteWorkRecordsById(int id,{required RequestResult requestResult}) async {
     try{
       Result result = await _dioUtil?.post(AppUrl.deleteWorkRecordsById, params: {"id": id});
+      requestResult.launch(result);
+    }catch(_){
+      requestResult.launchError();
+    }
+  }
+  void getWorkRecordsByYearMonth(Map<String,dynamic> params,{required RequestResult requestResult}) async {
+    try{
+      Result result = await _dioUtil?.post(AppUrl.getWorkRecordsByYearMonth, params: params);
       requestResult.launch(result);
     }catch(_){
       requestResult.launchError();

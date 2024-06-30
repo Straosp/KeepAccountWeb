@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
-import '../bean/SalaryRecords.dart';
+import '../bean/salary_records.dart';
 import '../bean/work_records.dart';
 import '../dio/DefaultRequestResult.dart';
 import '../dio/http_request.dart';
@@ -14,6 +14,8 @@ class WorkRecordsController extends BaseController {
   var totalSalary = .0.obs;
   var totalDays = 0.obs;
   var monthTotalProductQuantity = .0.obs;
+
+  var totalYearSalary = .0.obs;
 
   var workRecords = <WorkRecords>[].obs;
   var productQuantityController = TextEditingController();
@@ -27,7 +29,6 @@ class WorkRecordsController extends BaseController {
   var addWorkRecordsProductQuantityController = TextEditingController();
   var addWorkRecordsProductPriceController = TextEditingController();
   var addWorkRecordsTeamSizeController = TextEditingController();
-
   var workDate = "".obs;
 
 
@@ -111,17 +112,19 @@ class WorkRecordsController extends BaseController {
   void _getWorkRecordsByYear(){
     HttpRequest().getWorkRecordsRangeYear(
         {
-          "startDate": (getCurrentYear() - 5).toString(),
+          "startDate": getCurrentYear().toString(),
           "endDate": getCurrentYear().toString()
         },
         requestResult: DefaultRequestResult(
             success: (data){
               yearSalaryEntry.clear();
               yearSalaryEntry.addAll( (data as List<dynamic>).map((e) => SalaryRecords.fromJson(e as Map<String,dynamic>)).toList() );
+              totalYearSalary.value = (yearSalaryEntry.value.first.salary ?? 0).toDouble();
               change(null,status: RxStatus.success());
             },
             emptyData: (){
               yearSalaryEntry.clear();
+              totalYearSalary.value = .0;
               change(null,status: RxStatus.success());
             },
             error: (error){

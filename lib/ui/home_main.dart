@@ -2,13 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:keep_account_web/bean/salary_records.dart';
 import 'package:keep_account_web/utils/datetime_utils.dart';
 import 'package:keep_account_web/utils/getx_util.dart';
 import 'package:keep_account_web/utils/screen_utils.dart';
-import 'package:keep_account_web/view/dynamic_layout.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 import '../bean/work_records.dart';
+import '../view/dialog_utils.dart';
 import '../vm/work_records_controller.dart';
 
 class HomeMain extends StatefulWidget {
@@ -32,87 +33,13 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             title: Container(
             margin: EdgeInsets.only(left: 50.getScaleUpWidth(screenType)),
             alignment: Alignment.centerLeft,
-            child: Text("Keep Account",style: Theme.of(context).textTheme.titleLarge,),),actions: [
+            child: Text("工作记录",style: Theme.of(context).textTheme.titleLarge,),),actions: [
               appBarAction(screenType)
           ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.only(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(5.getScaleUpWidth(screenType)),
-                  margin: EdgeInsets.only(left: 5.getScaleUpWidth(screenType),right: 5.getScaleUpWidth(screenType)),
-                  child: dynamicLayout(screenType),
-                ),
-                Container(
-                  margin: EdgeInsets.only(left: 20.getScaleUpWidth(screenType),right: 20.getScaleUpWidth(screenType)),
-                  child: Visibility(
-                      visible: screenType == DeviceScreenType.large,
-                      maintainAnimation: false,
-                      maintainSize: false,
-                      maintainState: false,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                              flex: 3,
-                              child: LimitedBox(
-                                maxHeight: constraints.maxHeight - 500,
-                                child: currentMonthWorkRecords(),
-                              )
-                          ),
-                          Expanded(
-                              flex: 7,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  workRecordsInMonthLineChart(),
-                                  workRecordsInYearLineChart(),
-                                ],
-                              )
-                          )
-                        ],
-                      )
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.getScaleUpWidth(screenType)),
-                  child: Visibility(
-                      visible: screenType != DeviceScreenType.large,
-                      maintainAnimation: false,
-                      maintainSize: false,
-                      maintainState: false,
-                      child: workRecordsInMonthLineChart()
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.getScaleUpWidth(screenType)),
-                  child: Visibility(
-                      visible: screenType != DeviceScreenType.large,
-                      maintainAnimation: false,
-                      maintainSize: false,
-                      maintainState: false,
-                      child: workRecordsInYearLineChart()
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.getScaleUpWidth(screenType)),
-                  child: Visibility(
-                      visible: screenType != DeviceScreenType.large,
-                      maintainAnimation: false,
-                      maintainSize: false,
-                      maintainState: false,
-                      child: currentMonthWorkRecords()
-                  ),
-                ),
-
-              ],
-            ),
+            padding: EdgeInsets.all(10.getScaleUpWidth(screenType)),
+            child: screenType == DeviceScreenType.large ? largeWidget() : middleSmallWidget(),
           )
       );
     });
@@ -126,16 +53,19 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
           offset: const Offset(0,50),
           itemBuilder: (context){
             return <PopupMenuEntry<int>>[
-              PopupMenuItem(value: 1,child: Text("添加记录",style: Theme.of(context).textTheme.titleSmall,),),
-              PopupMenuItem(value: 2,child: Text("退出登录",style: Theme.of(context).textTheme.titleSmall),),
+              PopupMenuItem(value: 1,child: Text("历史记录",style: Theme.of(context).textTheme.titleSmall,),),
+              PopupMenuItem(value: 2,child: Text("添加记录",style: Theme.of(context).textTheme.titleSmall,),),
+              PopupMenuItem(value: 3,child: Text("退出登录",style: Theme.of(context).textTheme.titleSmall),),
             ];
           },
           onSelected: (key){
             switch(key){
               case 1:
+                toNamed("/work_records_history");
+              case 2:
                 showAddWorkRecordsDialog(screenType);
                 break;
-              case 2:
+              case 3:
                 offAllNamed("/user_login");
                 break;
             }
@@ -149,6 +79,15 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Container(
+              margin: EdgeInsets.only(right: 10.getScaleUpWidth(screenType)),
+              child: InkWell(
+                onTapDown: (d){
+                  toNamed("/work_records_history");
+                },
+                child: const Text("历史记录",style: TextStyle(fontSize: 16),),
+              ),
+            ),
             Container(
               margin: EdgeInsets.only(right: 10.getScaleUpWidth(screenType)),
               child: InkWell(
@@ -170,27 +109,103 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
     }
   }
 
+  Widget largeWidget(){
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            currentMonthTotalSalary(DeviceScreenType.large),
+            workRecordsInMonthLineChart()
+          ],
+        )),
+        SizedBox(width: 10.getScaleUpWidth(DeviceScreenType.large),),
+        Expanded(child: currentMonthWorkRecords()),
+        SizedBox(width: 10.getScaleUpWidth(DeviceScreenType.large),),
+      ],
+    );
+  }
 
-  Widget dynamicLayout(DeviceScreenType screenType){
-    if (screenType == DeviceScreenType.large) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(flex: 3,child: currentMonthTotalSalary(screenType)),
-          Expanded(flex: 7,child: workRecordsInDayLineChart())
-        ],
-      );
-    }else {
-      return Column(
-        crossAxisAlignment:CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          currentMonthTotalSalary(screenType),
-          workRecordsInDayLineChart()
-        ],
-      );
-    }
+  Widget middleSmallWidget(){
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        currentMonthTotalSalary(DeviceScreenType.large),
+        workRecordsInMonthLineChart(),
+        currentMonthWorkRecords()
+      ],
+    );
+  }
+
+  Widget currentMonthWorkRecords(){
+    return Obx(() => ListView.builder(
+        itemCount: _controller.workRecords.length,
+        itemExtent: 118,
+        shrinkWrap: true,
+        physics: const BouncingScrollPhysics(),
+        itemBuilder: (ctx,index){
+          return workRecordsItemView(_controller.workRecords.value[index]);
+        }
+    ));
+  }
+  Widget workRecordsItemView(WorkRecords data) {
+    return InkWell(
+      onLongPress: (){
+        showUpdateRecordsDialog(data);
+      },
+      child: Card(
+        elevation: 2,
+        shadowColor: Theme.of(context).colorScheme.shadow,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onBackground,
+              borderRadius: BorderRadius.circular(15)
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(data.workDate ?? "",style: const TextStyle(fontSize: 18,fontWeight: FontWeight.w500)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("${data.productQuantity}",style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600),),
+                      const Text("产品数量",style: TextStyle(fontSize: 16),)
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("${((data.productQuantity ?? 0) * (data.productPrice ?? 0)) / (data.teamSize ?? 0)}",style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600),),
+                      const Text("当天工资",style: TextStyle(fontSize: 16),)
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("${(data.productQuantity ?? 0) / (data.teamSize ?? 0)}",style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600),),
+                      const Text("当日产量",style: TextStyle(fontSize: 16),)
+                    ],
+                  )
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
   }
   Widget currentMonthTotalSalary(DeviceScreenType screenType){
     return Container(
@@ -209,7 +224,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Obx(() => Text("${_controller.totalSalary}",style: Theme.of(context).textTheme.bodyLarge,)),
-              Text("本月总工资",style: Theme.of(context).textTheme.bodySmall,)
+              Text("本月总工资",style: Theme.of(context).textTheme.titleSmall,)
             ],
           ),
           Column(
@@ -217,7 +232,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Obx(() => Text("${_controller.totalDays}",style: Theme.of(context).textTheme.bodyLarge,)),
-              Text("本月总工数",style: Theme.of(context).textTheme.bodySmall,)
+              Text("本月总工数",style: Theme.of(context).textTheme.titleSmall,)
             ],
           ),
           Column(
@@ -225,14 +240,21 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Obx(() => Text("${_controller.monthTotalProductQuantity}",style:Theme.of(context).textTheme.bodyLarge,)),
-              Text("本月产品总件数",style: Theme.of(context).textTheme.bodySmall,)
+              Text("本月产品总件数",style: Theme.of(context).textTheme.titleSmall,)
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Obx(() => Text("${_controller.totalYearSalary}",style:Theme.of(context).textTheme.bodyLarge,)),
+              Text("本年度总工资",style: Theme.of(context).textTheme.titleSmall,)
             ],
           )
         ],
       ),
     );
   }
-
   Widget workRecordsInDayLineChart(){
     return Obx((){
       return SfCartesianChart(
@@ -241,8 +263,6 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
         ),
         selectionType: SelectionType.series,
         zoomPanBehavior: ZoomPanBehavior(
-            enableMouseWheelZooming: false,
-            enableSelectionZooming: true,
             zoomMode: ZoomMode.xy,
             enablePanning: true,
             enablePinching: true
@@ -289,7 +309,6 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
       );
     });
   }
-
   Widget workRecordsInMonthLineChart(){
     return Obx((){
       return SfCartesianChart(
@@ -298,8 +317,6 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
         ),
         selectionType: SelectionType.series,
         zoomPanBehavior: ZoomPanBehavior(
-            enableMouseWheelZooming: false,
-            enableSelectionZooming: true,
             zoomMode: ZoomMode.xy,
             enablePanning: true,
             enablePinching: true
@@ -325,7 +342,11 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
         tooltipBehavior: TooltipBehavior(
             enable: true,
             shared: true,
-            activationMode: ActivationMode.singleTap
+            borderColor: Theme.of(context).colorScheme.onBackground,
+            activationMode: ActivationMode.singleTap,
+            builder: (data, point, series, pointIndex, seriesIndex){
+              return toolTitle(data);
+            }
         ),
         series: [
           ColumnSeries(
@@ -339,7 +360,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
               dataLabelSettings: DataLabelSettings(
                   isVisible: true,
                   textStyle: TextStyle(fontSize: 15,color: Theme.of(context).colorScheme.secondary),
-                  labelAlignment: ChartDataLabelAlignment.outer
+                  labelAlignment: ChartDataLabelAlignment.outer,
               )
           )
         ],
@@ -347,126 +368,26 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
     });
   }
 
-  Widget workRecordsInYearLineChart(){
-    return Obx((){
-      return SfCartesianChart(
-        primaryXAxis: CategoryAxis(
-            isVisible: true
-        ),
-        selectionType: SelectionType.series,
-        zoomPanBehavior: ZoomPanBehavior(
-            enableMouseWheelZooming: false,
-            enableSelectionZooming: true,
-            zoomMode: ZoomMode.xy,
-            enablePanning: true,
-            enablePinching: true
-        ),
-        legend: Legend(
-            isVisible: true,
-            position: LegendPosition.top,
-            alignment: ChartAlignment.far,
-            toggleSeriesVisibility: true,
-            overflowMode: LegendItemOverflowMode.wrap
-        ),
-        trackballBehavior: TrackballBehavior(
-            lineType: TrackballLineType.vertical,
-            enable: true,
-            tooltipSettings: const InteractiveTooltip(
-                color: Colors.purple,
-                connectorLineColor: Colors.yellow
-            ),
-            tooltipAlignment: ChartAlignment.center,
-            shouldAlwaysShow: true,
-            tooltipDisplayMode: TrackballDisplayMode.floatAllPoints
-        ),
-        tooltipBehavior: TooltipBehavior(
-            enable: true,
-            shared: true,
-            activationMode: ActivationMode.singleTap
-        ),
-        series: [
-          ColumnSeries(
-              name: "近5年年工资",
-              width: .1,
-              color: Theme.of(context).colorScheme.secondary,
-              dataSource: _controller.yearSalaryEntry.value,
-              xValueMapper: (en,_) => en.workDate,
-              yValueMapper: (en,_) => en.salary,
-              enableTooltip: true,
-              dataLabelSettings: DataLabelSettings(
-                  isVisible: true,
-                  textStyle: TextStyle(fontSize: 15,color: Theme.of(context).colorScheme.secondary),
-                  labelAlignment: ChartDataLabelAlignment.outer
-              )
-          )
-        ],
-      );
-    });
-  }
-
-  Widget currentMonthWorkRecords(){
+  Widget toolTitle(SalaryRecords salaryRecords){
     return Container(
-      margin: const EdgeInsets.only(top: 20),
-      child: Obx(() => ListView.builder(
-          itemCount: _controller.workRecords.length,
-          itemExtent: 118,
-          shrinkWrap: true,
-          physics: const BouncingScrollPhysics(),
-          itemBuilder: (ctx,index){
-            return itemView(_controller.workRecords.value[index]);
-          }
-      )),
+      width: 140,
+      height: 100,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onBackground
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(salaryRecords.workDate ?? "",style: Theme.of(context).textTheme.labelSmall,),
+          const Divider(),
+          Text("工资：${salaryRecords.salary}",style: Theme.of(context).textTheme.labelSmall,),
+          Text("数量：${salaryRecords.monthQuantity}",style: Theme.of(context).textTheme.labelSmall),
+        ],
+      ),
     );
   }
-
-  Widget itemView(WorkRecords data) {
-    return InkWell(
-        onLongPress: (){
-          showUpdateRecordsDialog(data);
-        },
-        child: Card(
-          elevation: 2,
-          shadowColor: Theme.of(context).colorScheme.shadow,
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onBackground,
-                borderRadius: BorderRadius.circular(15)
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(data.workDate ?? "",style: const TextStyle(fontSize: 18,fontWeight: FontWeight.w500)),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("${data.productQuantity}",style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600),),
-                        const Text("产品数量",style: TextStyle(fontSize: 16),)
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("${((data.productQuantity ?? 0) * (data.productPrice ?? 0)) / (data.teamSize ?? 0)}",style: const TextStyle(fontSize: 28,fontWeight: FontWeight.w600),),
-                        const Text("当天工资",style: TextStyle(fontSize: 16),)
-                      ],
-                    )
-                  ],
-                )
-              ],
-            ),
-          ),
-        )
-    );
-  }
-
   void showUpdateRecordsDialog(WorkRecords workRecords) async {
     _controller.productPriceController.text = "${workRecords.productPrice ?? .0}";
     _controller.productQuantityController.text = "${workRecords.productQuantity ?? 0}";
@@ -483,7 +404,18 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text("提示"),
-                TextButton(onPressed: (){Get.back();showSureDeleteWorkRecord(workRecords.workDate ?? "",workRecords.id ?? -1); }, child: const Text("删除记录",style: TextStyle(fontSize: 18),)),
+                TextButton(
+                    onPressed: (){
+                      Get.back();
+                      showSureDeleteWorkRecord(
+                          context: context,
+                          date: workRecords.workDate ?? "",
+                          sureDelete: (){
+                            _controller.deleteWorkRecords(workRecords.id ?? 0);
+                          });
+                    },
+                    child: const Text("删除记录",style: TextStyle(fontSize: 18),)
+                ),
               ],
             ),
             titlePadding: const EdgeInsets.only(top: 20,left: 15,right: 10,bottom: 0),
@@ -561,60 +493,25 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
           );
         });
   }
-
-  void showSureDeleteWorkRecord(String date,int deleteId) async {
-    await showDialog(
-        context: context,
-        builder: (ctx){
-          return AlertDialog(
-            title: const Text("提示"),
-            content: Container(
-              width: double.infinity,
-              height: 60,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("确定要删除在$date的工作记录吗？",style: const TextStyle(fontSize: 18),)
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: (){Get.back();}, child: const Text("取消",style: TextStyle(fontSize: 18),)),
-              TextButton(onPressed: (){
-                _controller.deleteWorkRecords(deleteId);
-                Get.back();
-              }, child: const Text("更新",style: TextStyle(fontSize: 18),))
-            ],
-          );
-        }
-    );
-  }
-
-
   void showAddWorkRecordsDialog(DeviceScreenType screenType) async {
     await showDialog(context: context, builder: (ctx){
       return AlertDialog(
-        title: Text("添加新的记录",style: Theme.of(context).textTheme.titleMedium,),
+        title: Text("添加新的记录",style: Theme.of(context).textTheme.titleSmall,),
         content: SizedBox(
-          height: screenType == DeviceScreenType.small ? 380 :100.getScaleUpWidth(screenType),
-          width: screenType == DeviceScreenType.small ? double.infinity : 100.getScaleUpWidth(screenType) ,
+          height: 400,
+          width: screenType == DeviceScreenType.small ? double.infinity : 120.getScaleUpWidth(screenType) ,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(top: 15),
-                  child: ListTile(
-                    leading: Icon(Icons.calendar_month_rounded,color: Theme.of(context).colorScheme.primary,),
-                    title: Obx(() => Text(_controller.workDate.value,style: Theme.of(context).textTheme.bodySmall,)),
-                    subtitle: Text("点击可选择时间",style: Theme.of(context).textTheme.bodySmall,),
-                    titleAlignment: ListTileTitleAlignment.center,
-                    onTap: (){
-                      showChooseDateDialog();
-                    },
-                  )
+              ListTile(
+                leading: Icon(Icons.calendar_month_rounded,color: Theme.of(context).colorScheme.primary,),
+                title: Obx(() => Text(_controller.workDate.value,style: Theme.of(context).textTheme.bodySmall,)),
+                subtitle: Text("点击可选择时间",style: Theme.of(context).textTheme.bodySmall,),
+                titleAlignment: ListTileTitleAlignment.center,
+                onTap: (){
+                  showChooseDateDialog();
+                },
               ),
               Container(
                 margin: const EdgeInsets.only(top: 20,left: 15,right: 15),
@@ -664,7 +561,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(top: 20.getScaleUpWidth(screenType),left: 10,right: 10),
+                margin: const EdgeInsets.only(top: 20,left: 10,right: 10),
                 child: SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -680,7 +577,6 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
       );
     });
   }
-
   void showChooseDateDialog() async {
     var time = await showDatePicker(
       context: context,

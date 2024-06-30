@@ -1,4 +1,4 @@
-import '../bean/ErrorMessage.dart';
+import '../bean/error_message.dart';
 import 'Result.dart';
 import 'network_constant.dart';
 

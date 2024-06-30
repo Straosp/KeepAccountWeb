@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import '../bean/ErrorMessage.dart';
+import '../bean/error_message.dart';
 import 'app_url.dart';
 
 class ApiErrorMessage{

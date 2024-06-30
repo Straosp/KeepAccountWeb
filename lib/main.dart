@@ -8,6 +8,7 @@ import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:keep_account_web/ui/home_main.dart';
 import 'package:keep_account_web/ui/splash.dart';
 import 'package:keep_account_web/ui/user_login.dart';
+import 'package:keep_account_web/ui/work_records_history.dart';
 import 'package:keep_account_web/view/theme.dart';
 
 void main() {
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(name: "/user_login", page: ()=>const UserLogin()),
         GetPage(name: "/home_main", page:()=> const HomeMain()),
+        GetPage(name: "/work_records_history", page:()=> const WorkRecordsHistory()),
       ],
     );
   }
