@@ -82,7 +82,14 @@ class _WorkRecordsHistoryState extends State<WorkRecordsHistory> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Obx(() => Text("${_controller.monthTotalProductQuantity}",style:Theme.of(context).textTheme.bodyLarge,)),
-                            Text("本月产品总件数",style: Theme.of(context).textTheme.titleSmall,)
+                            Text("本月产品总件数",style: Theme.of(context).textTheme.titleSmall,),
+                            Obx(() => Visibility(
+                                visible: _controller.singleWorkProductQuantity.value > 0,
+                                maintainAnimation: false,
+                                maintainSize: false,
+                                maintainState: false,
+                                child: Text("含个人件${_controller.singleWorkProductQuantity.value}件",style: Theme.of(context).textTheme.headlineSmall,)
+                            ))
                           ],
                         )
                       ],
@@ -96,7 +103,7 @@ class _WorkRecordsHistoryState extends State<WorkRecordsHistory> {
                   maintainState: false,
                   child: Container(
                     margin: EdgeInsets.only(top: 50.getScaleUpWidth(screenType)),
-                    child: SelectableText("本月没有上班哦"),
+                    child: const SelectableText("本月没有上班哦"),
                   ))),
               Container(
                 margin: const EdgeInsets.only(top: 20),

@@ -1,3 +1,5 @@
+import 'package:keep_account_web/utils/datetime_utils.dart';
+
 import '../bean/work_records.dart';
 import 'DefaultRequestResult.dart';
 import 'Result.dart';
@@ -102,6 +104,14 @@ class HttpRequest {
   void getWorkRecordsByYearMonth(Map<String,dynamic> params,{required RequestResult requestResult}) async {
     try{
       Result result = await _dioUtil?.post(AppUrl.getWorkRecordsByYearMonth, params: params);
+      requestResult.launch(result);
+    }catch(_){
+      requestResult.launchError();
+    }
+  }
+  void getTotalSalaryByYear({required RequestResult requestResult}) async {
+    try{
+      Result result = await _dioUtil?.post(AppUrl.getTotalSalaryByYear, params: {"year": getCurrentYear()});
       requestResult.launch(result);
     }catch(_){
       requestResult.launchError();

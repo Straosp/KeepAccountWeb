@@ -123,7 +123,18 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
           ],
         )),
         SizedBox(width: 10.getScaleUpWidth(DeviceScreenType.large),),
-        Expanded(child: currentMonthWorkRecords()),
+        Obx(() => Visibility(
+            maintainAnimation: false,
+            maintainSize: false,
+            maintainState: false,
+            child: Expanded(child: currentMonthWorkRecordsLiveView())
+        )),
+        Obx(() => Visibility(
+            visible: _controller.workRecords.isEmpty,
+            maintainAnimation: false,
+            maintainSize: false,
+            maintainState: false,
+            child: const Expanded(child: SelectableText("本月没有上班哦")))),
         SizedBox(width: 10.getScaleUpWidth(DeviceScreenType.large),),
       ],
     );
@@ -136,13 +147,22 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
       children: [
         currentMonthTotalSalary(DeviceScreenType.large),
         workRecordsInMonthLineChart(),
-        currentMonthWorkRecords()
+        currentMonthWorkRecordsLiveView(),
+        Obx(() => Visibility(
+            visible: _controller.workRecords.isEmpty,
+            maintainAnimation: false,
+            maintainSize: false,
+            maintainState: false,
+            child: Container(
+              margin: EdgeInsets.only(top: 50.getScaleUpWidth(DeviceScreenType.small)),
+              child: const SelectableText("本月没有上班哦"),
+            ))),
       ],
     );
   }
 
-  Widget currentMonthWorkRecords(){
-    return Obx(() => ListView.builder(
+  Widget currentMonthWorkRecordsLiveView(){
+    return ListView.builder(
         itemCount: _controller.workRecords.length,
         itemExtent: 118,
         shrinkWrap: true,
@@ -150,7 +170,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
         itemBuilder: (ctx,index){
           return workRecordsItemView(_controller.workRecords.value[index]);
         }
-    ));
+    );
   }
   Widget workRecordsItemView(WorkRecords data) {
     return InkWell(
@@ -209,7 +229,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
   }
   Widget currentMonthTotalSalary(DeviceScreenType screenType){
     return Container(
-      padding: EdgeInsets.only(top: 10.getScaleUpWidth(screenType),bottom: 10.getScaleUpWidth(screenType)),
+      padding: EdgeInsets.only(top: 5.getScaleUpWidth(screenType),bottom: 5.getScaleUpWidth(screenType)),
       width: double.infinity,
       decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.onBackground,
@@ -223,7 +243,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Obx(() => Text("${_controller.totalSalary}",style: Theme.of(context).textTheme.bodyLarge,)),
+              Obx(() => SelectableText("${_controller.totalSalary}",style: Theme.of(context).textTheme.bodyLarge,)),
               Text("本月总工资",style: Theme.of(context).textTheme.titleSmall,)
             ],
           ),
@@ -231,7 +251,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Obx(() => Text("${_controller.totalDays}",style: Theme.of(context).textTheme.bodyLarge,)),
+              Obx(() => SelectableText("${_controller.totalDays}",style: Theme.of(context).textTheme.bodyLarge,)),
               Text("本月总工数",style: Theme.of(context).textTheme.titleSmall,)
             ],
           ),
@@ -239,15 +259,22 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Obx(() => Text("${_controller.monthTotalProductQuantity}",style:Theme.of(context).textTheme.bodyLarge,)),
-              Text("本月产品总件数",style: Theme.of(context).textTheme.titleSmall,)
+              Obx(() => SelectableText("${_controller.monthTotalProductQuantity}",style:Theme.of(context).textTheme.bodyLarge,)),
+              Text("本月产品总件数",style: Theme.of(context).textTheme.titleSmall,),
+              Obx(() => Visibility(
+                  visible: _controller.singleWorkProductQuantity.value > 0,
+                  maintainAnimation: false,
+                  maintainSize: false,
+                  maintainState: false,
+                  child: SelectableText("含个人件${_controller.singleWorkProductQuantity.value}件",style: Theme.of(context).textTheme.headlineSmall,)
+              ))
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Obx(() => Text("${_controller.totalYearSalary}",style:Theme.of(context).textTheme.bodyLarge,)),
+              Obx(() => SelectableText("${_controller.totalYearSalary.value}",style:Theme.of(context).textTheme.bodyLarge,)),
               Text("本年度总工资",style: Theme.of(context).textTheme.titleSmall,)
             ],
           )
@@ -255,79 +282,14 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
       ),
     );
   }
-  Widget workRecordsInDayLineChart(){
-    return Obx((){
-      return SfCartesianChart(
-        primaryXAxis: CategoryAxis(
-            isVisible: true,
-        ),
-        selectionType: SelectionType.series,
-        zoomPanBehavior: ZoomPanBehavior(
-            zoomMode: ZoomMode.xy,
-            enablePanning: true,
-            enablePinching: true
-        ),
-        legend: Legend(
-            isVisible: true,
-            position: LegendPosition.top,
-            alignment: ChartAlignment.far,
-            toggleSeriesVisibility: true,
-            overflowMode: LegendItemOverflowMode.wrap
-        ),
-        trackballBehavior: TrackballBehavior(
-            lineType: TrackballLineType.vertical,
-            enable: true,
-            tooltipSettings: const InteractiveTooltip(
-                color: Colors.purple,
-                connectorLineColor: Colors.yellow
-            ),
-            tooltipAlignment: ChartAlignment.center,
-            shouldAlwaysShow: true,
-            tooltipDisplayMode: TrackballDisplayMode.floatAllPoints
-        ),
-        tooltipBehavior: TooltipBehavior(
-            enable: true,
-            shared: true,
-            activationMode: ActivationMode.singleTap
-        ),
-        series: [
-          ColumnSeries(
-              name: "${getCurrentMonth()}月日工资",
-              width: .1,
-              color: Theme.of(context).colorScheme.secondary,
-              dataSource: _controller.daySalaryEntry.value,
-              xValueMapper: (en,_) => en.workDate?.substring(8) ?? "-",
-              yValueMapper: (en,_) => en.salary,
-              enableTooltip: true,
-              dataLabelSettings: DataLabelSettings(
-                  isVisible: true,
-                  textStyle: TextStyle(fontSize: 15,color: Theme.of(context).colorScheme.secondary),
-                  labelAlignment: ChartDataLabelAlignment.outer
-              )
-          )
-        ],
-      );
-    });
-  }
   Widget workRecordsInMonthLineChart(){
     return Obx((){
       return SfCartesianChart(
         primaryXAxis: CategoryAxis(
             isVisible: true
         ),
+        onChartTouchInteractionUp: null,
         selectionType: SelectionType.series,
-        zoomPanBehavior: ZoomPanBehavior(
-            zoomMode: ZoomMode.xy,
-            enablePanning: true,
-            enablePinching: true
-        ),
-        legend: Legend(
-            isVisible: true,
-            position: LegendPosition.top,
-            alignment: ChartAlignment.far,
-            toggleSeriesVisibility: true,
-            overflowMode: LegendItemOverflowMode.wrap
-        ),
         trackballBehavior: TrackballBehavior(
             lineType: TrackballLineType.vertical,
             enable: true,
@@ -358,9 +320,9 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
               yValueMapper: (en,_) => en.salary,
               enableTooltip: true,
               dataLabelSettings: DataLabelSettings(
-                  isVisible: true,
-                  textStyle: TextStyle(fontSize: 15,color: Theme.of(context).colorScheme.secondary),
-                  labelAlignment: ChartDataLabelAlignment.outer,
+                isVisible: true,
+                textStyle: TextStyle(fontSize: 15,color: Theme.of(context).colorScheme.secondary),
+                labelAlignment: ChartDataLabelAlignment.outer,
               )
           )
         ],
@@ -370,7 +332,7 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
 
   Widget toolTitle(SalaryRecords salaryRecords){
     return Container(
-      width: 140,
+      width: 120,
       height: 100,
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
@@ -380,10 +342,16 @@ class _HomeMainState extends State<HomeMain> with SingleTickerProviderStateMixin
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(salaryRecords.workDate ?? "",style: Theme.of(context).textTheme.labelSmall,),
-          const Divider(),
-          Text("工资：${salaryRecords.salary}",style: Theme.of(context).textTheme.labelSmall,),
-          Text("数量：${salaryRecords.monthQuantity}",style: Theme.of(context).textTheme.labelSmall),
+          Text(salaryRecords.workDate ?? "",style:  const TextStyle(fontSize: 14),),
+          Text("工资：${salaryRecords.salary}",style:  const TextStyle(fontSize: 14)),
+          Text("数量：${salaryRecords.monthQuantity}",style:  const TextStyle(fontSize: 14)),
+          Visibility(
+            visible: (salaryRecords.singleWorkProductQuantity ?? 0) > 0,
+            maintainAnimation: false,
+            maintainSize: false,
+            maintainState: false,
+            child: Text("个人件数: ${salaryRecords.singleWorkProductQuantity}",style: const TextStyle(fontSize: 12),)
+          )
         ],
       ),
     );

@@ -5,12 +5,6 @@ extension DateTimeExtension on DateTime{
   }
 }
 
-extension intMonthExtension on int {
-  String intMonthToString(){
-    return this < 10 ? "0$this" : "$this";
-  }
-}
-
 int getCurrentYear() {
   return DateTime.now().year;
 }

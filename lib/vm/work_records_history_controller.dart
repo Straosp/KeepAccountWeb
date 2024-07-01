@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
@@ -15,6 +17,7 @@ class WorkRecordsHistoryController extends BaseController {
   var year = getCurrentYear().toInt().obs;
   var month = getCurrentMonth().toInt().obs;
   var workRecords = <WorkRecords>[].obs;
+  var singleWorkProductQuantity = .0.obs;
 
   var productQuantityController = TextEditingController();
   var productPriceController = TextEditingController();
@@ -65,6 +68,7 @@ class WorkRecordsHistoryController extends BaseController {
             success: (data){
               totalSalary.value = .0;
               monthTotalProductQuantity.value = .0;
+              singleWorkProductQuantity.value = .0;
               workRecords.clear();
               if (data == null || (data as List<dynamic>).isEmpty) {
                 change(null,status: RxStatus.empty());
@@ -75,7 +79,10 @@ class WorkRecordsHistoryController extends BaseController {
               for (var element in result) {
                 var last = salaryMap[element.teamSize] ?? 0;
                 salaryMap[element.teamSize ?? 0] = last + ((element.productPrice ?? 0) * (element.productQuantity ?? 0));
-                monthTotalProductQuantity.value += (element.productQuantity ?? 0) / (element.teamSize ?? 0);
+                monthTotalProductQuantity.value += element.productQuantity ?? 0;
+                if (element.teamSize == 1) {
+                  singleWorkProductQuantity.value += element.productQuantity ?? 0;
+                }
               }
               for (var element in salaryMap.keys) {
                 totalSalary.value += ((salaryMap[element] ?? 0) / element);

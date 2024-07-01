@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:keep_account_web/bean/year_salary.dart';
 import '../bean/salary_records.dart';
 import '../bean/work_records.dart';
 import '../dio/DefaultRequestResult.dart';
@@ -15,16 +16,15 @@ class WorkRecordsController extends BaseController {
   var totalDays = 0.obs;
   var monthTotalProductQuantity = .0.obs;
 
+  var singleWorkProductQuantity = .0.obs;
+
   var totalYearSalary = .0.obs;
 
   var workRecords = <WorkRecords>[].obs;
   var productQuantityController = TextEditingController();
   var productPriceController = TextEditingController();
   var teamSizeController = TextEditingController();
-
-  var daySalaryEntry = <SalaryRecords>[].obs;
   var monthSalaryEntry = <SalaryRecords>[].obs;
-  var yearSalaryEntry = <SalaryRecords>[].obs;
 
   var addWorkRecordsProductQuantityController = TextEditingController();
   var addWorkRecordsProductPriceController = TextEditingController();
@@ -36,28 +36,44 @@ class WorkRecordsController extends BaseController {
   void onReady() {
     super.onReady();
     workDate.value = "${getCurrentYear()}-${getCurrentMonth().toString().padLeft(2,"0")}-${getCurrentDay().toString().padLeft(2,"0")}";
-    getCurrentMonthRecords();
-    _getWorkRecordsByDay();
+    _getCurrentMonthRecords();
     _getWorkRecordsByMonth();
-    _getWorkRecordsByYear();
+    _getTotalSalaryByYear();
   }
 
   @override
   void retry() {
-    getCurrentMonthRecords();
+    _getCurrentMonthRecords();
   }
-  void getCurrentMonthRecords(){
+
+  void _getTotalSalaryByYear(){
+    HttpRequest().getTotalSalaryByYear(
+      requestResult: DefaultRequestResult(
+          success: (data){
+            var salary = YearSalary.fromJson(data as Map<String,dynamic>);
+            totalYearSalary.value = salary.salary?.toDouble() ?? .0;
+          },
+          emptyData: (){},
+          error: (error){}
+      )
+    );
+  }
+  void _getCurrentMonthRecords(){
     HttpRequest().getCurrentMonthWorkRecords(
         requestResult: DefaultRequestResult(
             success: (data){
               totalSalary.value = .0;
+              singleWorkProductQuantity.value = .0;
               monthTotalProductQuantity.value = .0;
               var result = (data as List<dynamic>).map((e) => WorkRecords.fromJson(e as Map<String,dynamic>)).toList();
               var salaryMap = <int,double>{};
               for (var element in result) {
                 var last = salaryMap[element.teamSize] ?? 0;
                 salaryMap[element.teamSize ?? 0] = last + ((element.productPrice ?? 0) * (element.productQuantity ?? 0));
-                monthTotalProductQuantity.value += (element.productQuantity ?? 0) / (element.teamSize ?? 0);
+                monthTotalProductQuantity.value += element.productQuantity ?? 0;
+                if (element.teamSize == 1) {
+                  singleWorkProductQuantity.value += element.productQuantity ?? 0;
+                }
               }
               for (var element in salaryMap.keys) {
                 totalSalary.value += ((salaryMap[element] ?? 0) / element);
@@ -76,7 +92,6 @@ class WorkRecordsController extends BaseController {
             }
         ));
   }
-
   void updateWorkRecords(WorkRecords data){
     HttpRequest().updateWorkRecords(
     data.copyWith(
@@ -87,7 +102,7 @@ class WorkRecordsController extends BaseController {
     requestResult: BoolRequestResult(
         success: (){
           EasyLoading.showSuccess("更新成功");
-          getCurrentMonthRecords();
+          _getCurrentMonthRecords();
         }, 
         error: (error){
           EasyLoading.showError(error.message);
@@ -108,31 +123,6 @@ class WorkRecordsController extends BaseController {
             }
         ));
   }
-
-  void _getWorkRecordsByYear(){
-    HttpRequest().getWorkRecordsRangeYear(
-        {
-          "startDate": getCurrentYear().toString(),
-          "endDate": getCurrentYear().toString()
-        },
-        requestResult: DefaultRequestResult(
-            success: (data){
-              yearSalaryEntry.clear();
-              yearSalaryEntry.addAll( (data as List<dynamic>).map((e) => SalaryRecords.fromJson(e as Map<String,dynamic>)).toList() );
-              totalYearSalary.value = (yearSalaryEntry.value.first.salary ?? 0).toDouble();
-              change(null,status: RxStatus.success());
-            },
-            emptyData: (){
-              yearSalaryEntry.clear();
-              totalYearSalary.value = .0;
-              change(null,status: RxStatus.success());
-            },
-            error: (error){
-              EasyLoading.showError(error.message);
-              change(null,status: RxStatus.empty());
-            }
-        ));
-  }
   void _getWorkRecordsByMonth(){
     HttpRequest().getWorkRecordsRangeMonth(
         {
@@ -147,30 +137,6 @@ class WorkRecordsController extends BaseController {
             },
             emptyData: (){
               monthSalaryEntry.clear();
-              change(null,status: RxStatus.success());
-            },
-            error: (error){
-              EasyLoading.showError(error.message);
-              change(null,status: RxStatus.empty());
-            }
-        ));
-  }
-  void _getWorkRecordsByDay(){
-    var startDate = "${getCurrentYear()}-${getCurrentMonth().toString().padLeft(2,"0")}-01";
-    var endDate = "${getCurrentYear()}-${getCurrentMonth().toString().padLeft(2,"0")}-${getDaysInMonth(getCurrentYear(), getCurrentMonth())}";
-    HttpRequest().getWorkRecordsRangeDay(
-        {
-          "startDate": startDate,
-          "endDate": endDate
-        },
-        requestResult: DefaultRequestResult(
-            success: (data){
-              daySalaryEntry.clear();
-              daySalaryEntry.addAll( (data as List<dynamic>).map((e) => SalaryRecords.fromJson(e as Map<String,dynamic>)).toList() );
-              change(null,status: RxStatus.success());
-            },
-            emptyData: (){
-              daySalaryEntry.clear();
               change(null,status: RxStatus.success());
             },
             error: (error){
@@ -203,8 +169,7 @@ class WorkRecordsController extends BaseController {
         requestResult: BoolRequestResult(
             success: (){
               EasyLoading.showSuccess("提交成功");
-              _getWorkRecordsByDay();
-              getCurrentMonthRecords();
+              _getCurrentMonthRecords();
             },
             error: (error){
               EasyLoading.showError(error.message);
